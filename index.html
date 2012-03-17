@@ -129,7 +129,7 @@
     var oprah = oprahs[data.id];
     if (data.message && oprah) {
       oprah.message = data.message;
-      if (oprah.timeout) clearTimeout(oprah);
+      if (oprah.timeout) clearTimeout(oprah.timeout);
       oprah.timeout = setTimeout(function(){
         oprah.message = null;
       }, 20000);

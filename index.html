@@ -1,6 +1,6 @@
 <html>
 <head>
-  <title>Oprah Node Knockout-style demo using socket.io, coffeescript and deployed on Nodester</title>
+  <title>Oprah Node Knockout-style demo using Socket.io, Coffeescript and deployed on Nodester</title>
 <style>
   #container {position: relative;width: 1500px;height: 900px;}
   .oprah {position: absolute;top: 100px;left: 100px;width: 80px; height: 71px;background-image: url(http://c5041088.r88.cf2.rackcdn.com/oprah2.png);}
@@ -9,7 +9,10 @@
 <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-<div id="container"></div>
+<div id="container">
+  <h2>To move, just click where you would like Oprah to go.</h2>
+  <h2>To make Oprah say something, just type something.</h2>
+</div>
 <script>
   var oprahs = {};
   
@@ -66,7 +69,6 @@
   }
   
   var socket = io.connect('//');
-
   socket.emit('new_oprah');
   
   document.getElementById('container').onclick = function(e){

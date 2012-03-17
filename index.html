@@ -1,0 +1,142 @@
+<style>
+  #container {position: relative;width: 2000px;height: 2000px;}
+  .oprah {position: absolute;top: 100px;left: 100px;width: 80px; height: 71px;background-image: url(http://c5041088.r88.cf2.rackcdn.com/oprah2.png);}
+  .oprah_speech_bubble {position: absolute;top: 100px;left: 100px;height: 20px;background-color: #e3e3e3;color: black;font-family:verdana,sans-serif;padding:5px;border:1px dotted}
+</style>
+<div id="container"></div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  var oprahs = {};
+  
+  function createAndAppendElement(eclass){
+    var element = document.createElement('div');
+    element.setAttribute('class', eclass);
+    document.getElementById('container').appendChild(element);
+    return element;
+  }
+
+  function drawOprah(id){
+    var oprah = oprahs[id];
+    var element = oprah && oprah.element;
+    if (element && oprah.location) {
+      element.style.left = oprah.location[0]+'px';
+      element.style.top = oprah.location[1]+'px';
+    }
+    // Oprah has something to say
+    if (oprah.message) {
+      if (!oprah.speech_bubble) {
+        oprah.speech_bubble = createAndAppendElement('oprah_speech_bubble');
+      }
+      oprah.speech_bubble.style.display = 'block';
+      oprah.speech_bubble.style.left = (oprah.location[0]+60)+'px';
+      oprah.speech_bubble.style.top = (oprah.location[1]-30)+'px';
+      oprah.speech_bubble.innerHTML = oprah.message;
+    }
+    else {
+      if (oprah.speech_bubble) oprah.speech_bubble.style.display = 'none';
+    }
+  }
+
+  function animateOprahs(){
+    var ox, oy, dx, dy;
+    for (var id in oprahs) {
+      var oprah = oprahs[id];
+      if (oprah.destination) {
+        ox = oprah.location[0]; oy = oprah.location[1];
+        dx = oprah.destination[0]; dy = oprah.destination[1];
+        // Just like the frog in the well parable, Oprah never quite gets there
+        oprah.location[0] += (dx-ox)/16;
+        oprah.location[1] += (dy-oy)/16;
+        drawOprah(id);
+      }
+    }
+  }
+  
+  function deleteOprah(id){
+    var oprah = oprahs[id];
+    if (!oprah) return;
+    if (oprah.element) document.getElementById('container').removeChild(oprah.element);
+    if (oprah.speech_bubble) document.getElementById('container').removeChild(oprah.speech_bubble);
+    delete oprahs[id];
+  }
+  
+  var socket = io.connect('http://localhost');
+
+  socket.emit('new_oprah');
+  
+  document.getElementById('container').onclick = function(e){
+    if (e.x && e.y) {
+      socket.emit('oprah_location_changed', {x: e.x, y: e.y});
+    }
+  };
+
+  var message = "";
+  var message_timeout;
+  document.onkeypress = function (e) {
+    var keycode, str;
+    if (window.event) {
+        keycode = window.event.keyCode;
+    }
+    else if (e) keycode = e.which;
+    str = String.fromCharCode(keycode);
+    if (str.match(/[A-Za-z0-9\!\. ]/)) {
+      message += str;
+      socket.emit('oprah_said_something_profound', message);
+      if (message_timeout) clearTimeout(message_timeout);
+      message_timeout = setTimeout(function(){
+        message = "";
+      }, 4000);
+    }
+    e.preventDefault();
+    return false;
+  }
+  
+  // Handle backspace. Hardcore programmers will kill me for this
+  document.onkeydown = function(e){
+    e = e? e : window.event;
+    var k = e.keyCode? e.keyCode : e.which? e.which : null;
+    if (k == 8){
+      message = message.substr(0, message.length-1);
+      socket.emit('oprah_said_something_profound', message);
+      if (e.preventDefault)
+        e.preventDefault();
+      return false;
+    }
+    return true;
+  }
+  
+  socket.on('populate_oprahs', function (all_oprahs) { 
+    all_oprahs && all_oprahs.forEach(function(oprah){
+      if (!oprahs[oprah.id]) {
+        oprahs[oprah.id] = {element: createAndAppendElement('oprah'), location: oprah.location};
+        drawOprah(oprah.id);
+      }
+    });
+  });
+
+  socket.on('oprah_location_changed', function (oprah) { 
+    if (oprah.location && oprahs[oprah.id]) {
+      oprahs[oprah.id].destination = oprah.location;
+    }
+  });
+
+  socket.on('oprah_said_something_profound', function (data) { 
+    var oprah = oprahs[data.id];
+    if (data.message && oprah) {
+      oprah.message = data.message;
+      if (oprah.timeout) clearTimeout(oprah);
+      oprah.timeout = setTimeout(function(){
+        oprah.message = null;
+      }, 20000);
+    }
+  });
+  
+  socket.on('oprah_gone', function (oprah) { 
+    deleteOprah(oprah.id);
+  });
+  
+  setInterval(function(){
+    animateOprahs();
+  }, 20);
+  
+</script>

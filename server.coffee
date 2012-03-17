@@ -13,7 +13,7 @@ app.get '/', (req, res) -> res.sendfile "#{__dirname}/index.html"
 io.sockets.on 'connection', (socket) ->
 
   socket.on 'new_oprah', (data) ->
-    oprahs.push id: socket.id, location: [Math.round(Math.random()*600), Math.round(Math.random()*400)]
+    oprahs.push id: socket.id, location: [Math.round(Math.random()*500), Math.round(Math.random()*350)]
     io.sockets.emit 'populate_oprahs', oprahs
 
   socket.on 'oprah_location_changed', (data) ->
